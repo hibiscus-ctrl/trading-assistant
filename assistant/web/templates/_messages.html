@@ -1,0 +1,9 @@
+{% if messages %}
+<ul class="messages">
+  {% for m in messages %}
+    <li><span class="time">{{ m.time }}</span><span class="kind kind-{{ m.kind|lower }}">{{ m.kind }}</span><span class="text">{{ m.text|truncate(400) }}</span></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No messages yet.</p>
+{% endif %}

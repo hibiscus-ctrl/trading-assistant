@@ -1,0 +1,13 @@
+<label>Quick model <span class="muted small">(analysts, tools)</span>
+  <input name="quick_model" list="quick-models" value="{{ defaults.quick_model }}" required autocomplete="off">
+  <datalist id="quick-models">
+    {% for label, value in choices.quick %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+  </datalist>
+</label>
+<label>Deep model <span class="muted small">(managers, final decision)</span>
+  <input name="deep_model" list="deep-models" value="{{ defaults.deep_model }}" required autocomplete="off">
+  <datalist id="deep-models">
+    {% for label, value in choices.deep %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+  </datalist>
+</label>
+{% if fresh %}<p class="muted small span2">Pick from the list or type any model ID the provider serves.</p>{% endif %}

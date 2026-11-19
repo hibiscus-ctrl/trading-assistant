@@ -1,0 +1,18 @@
+<div id="live" hx-get="runs/{{ run.id }}/live" hx-trigger="every 2s" hx-swap="outerHTML">
+  <section class="card">
+    {% if status == "queued" %}<p class="muted">Waiting for the run ahead of it to finish…</p>{% endif %}
+    {% include "_stages.html" %}
+  </section>
+  <div class="split">
+    <section class="card">
+      <h2>Current report{% if current %} · {{ current.title }}{% endif %}</h2>
+      <div class="report">
+        {% if current %}{{ current.text|markdown|safe }}{% else %}<p class="muted">The analysts are gathering data.</p>{% endif %}
+      </div>
+    </section>
+    <section class="card">
+      <h2>Messages &amp; tools</h2>
+      {% include "_messages.html" %}
+    </section>
+  </div>
+</div>

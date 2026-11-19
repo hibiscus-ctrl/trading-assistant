@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h1>New analysis</h1>
+  {% if not providers %}
+    <p class="warn">No model provider is ready. Add an API key (for example <code>OPENAI_API_KEY</code>) to <code>.env</code> in the repo folder and restart the dashboard.</p>
+  {% else %}
+  <form hx-post="runs" hx-target="#form-errors" hx-disabled-elt="button[type=submit]">
+    <div class="grid">
+      <label>Ticker
+        <input name="ticker" value="{{ defaults.ticker }}" placeholder="NVDA" required autofocus autocomplete="off">
+      </label>
+      <label>Analysis date
+        <input type="date" name="trade_date" value="{{ defaults.date }}" max="{{ defaults.date }}" required>
+      </label>
+      <label>Debate rounds
+        <select name="depth">
+          {% for n, label in [(1, "1 · quick"), (3, "3 · standard"), (5, "5 · deep")] %}
+            <option value="{{ n }}" {% if n == defaults.depth %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Provider
+        <select name="provider" hx-get="models" hx-target="#model-fields" hx-trigger="change">
+          {% for p in providers %}
+            <option value="{{ p.key }}" {% if p.key == defaults.provider %}selected{% endif %}>{{ p.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <div id="model-fields" class="grid">
+      {% include "_model_fields.html" %}
+    </div>
+    <fieldset>
+      <legend>Analysts</legend>
+      {% for key in analyst_order %}
+        <label class="check"><input type="checkbox" name="analysts" value="{{ key }}" {% if key in defaults.analysts %}checked{% endif %}> {{ analyst_labels[key] }}</label>
+      {% endfor %}
+    </fieldset>
+    <div id="form-errors"></div>
+    <button type="submit">Run analysis</button>
+    <span class="muted small">A run takes several minutes and calls the model many times; runs queue one at a time.</span>
+  </form>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Runs</h2>
+  {% include "_runs_table.html" %}
+</section>
+{% endblock %}

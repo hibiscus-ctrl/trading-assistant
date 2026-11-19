@@ -1,0 +1,25 @@
+<div id="runs" {% if any_active %}hx-get="runs/table" hx-trigger="every 5s" hx-swap="outerHTML"{% endif %}>
+  {% if not runs %}
+    <p class="muted">No runs yet.</p>
+  {% else %}
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>#</th><th>Ticker</th><th>Date</th><th>Status</th><th>Rating</th><th>Models</th><th>Tokens in / out</th><th>Started</th></tr></thead>
+    <tbody>
+    {% for r in runs %}
+      <tr>
+        <td><a href="runs/{{ r.id }}">{{ r.id }}</a></td>
+        <td><a href="tickers/{{ r.ticker }}">{{ r.ticker }}</a></td>
+        <td>{{ r.trade_date }}</td>
+        <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
+        <td>{% if r.rating %}<span class="badge rating rating-{{ r.rating|lower }}">{{ r.rating }}</span>{% endif %}</td>
+        <td class="small">{{ r.quick_model }} / {{ r.deep_model }}</td>
+        <td class="num">{{ "{:,}".format(r.tokens_in) }} / {{ "{:,}".format(r.tokens_out) }}</td>
+        <td class="small muted">{{ (r.started_at or r.created_at)[:16]|replace("T", " ") }} UTC</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+</div>

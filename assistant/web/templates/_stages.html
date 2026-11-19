@@ -1,0 +1,10 @@
+<ol class="stages">
+  {% for s in stages %}
+    <li class="stage stage-{{ s.status }}"><span class="dot"></span>{{ s.name }}</li>
+  {% endfor %}
+</ol>
+<p class="stats">
+  {{ elapsed // 60 }}m {{ "%02d"|format(elapsed % 60) }}s ·
+  {{ stats.llm_calls }} model calls · {{ stats.tool_calls }} tool calls ·
+  {{ "{:,}".format(stats.tokens_in) }} tokens in / {{ "{:,}".format(stats.tokens_out) }} out
+</p>

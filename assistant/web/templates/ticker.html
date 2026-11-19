@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ ticker }} · Trading assistant{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ ticker }}</h1>
+  <p class="muted small">Every dashboard run for this ticker, newest analysis date first.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Date</th><th>Rating</th><th>Status</th><th>Models</th><th>Run</th></tr></thead>
+    <tbody>
+    {% for r in runs %}
+      <tr>
+        <td>{{ r.trade_date }}</td>
+        <td>{% if r.rating %}<span class="badge rating rating-{{ r.rating|lower }}">{{ r.rating }}</span>{% endif %}</td>
+        <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
+        <td class="small">{{ r.quick_model }} / {{ r.deep_model }}</td>
+        <td><a href="runs/{{ r.id }}">#{{ r.id }}</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ run.ticker }} {{ run.trade_date }} · Trading assistant{% endblock %}
+{% block content %}
+<section class="run-head">
+  <div>
+    <h1><a href="tickers/{{ run.ticker }}">{{ run.ticker }}</a> <span class="muted">· {{ run.trade_date }}</span></h1>
+    <p class="muted small">Run #{{ run.id }} · {{ run.provider }} · {{ run.quick_model }} / {{ run.deep_model }} · {{ run.depth }} debate round{{ "s" if run.depth != 1 }} · {{ run.analysts|join(", ") }}</p>
+  </div>
+  <div class="head-right">
+    <span class="badge status-{{ status }}">{{ status }}</span>
+    {% if run.rating %}<span class="badge rating big rating-{{ run.rating|lower }}">{{ run.rating }}</span>{% endif %}
+    {% if live %}<button class="secondary" hx-post="runs/{{ run.id }}/cancel" hx-swap="none" hx-confirm="Stop this run? Model calls already made are still billed.">Stop</button>{% endif %}
+    {% if has_html %}<a class="button secondary" href="runs/{{ run.id }}/report" target="_blank" rel="noopener">Full HTML report</a>{% endif %}
+  </div>
+</section>
+
+{% if live %}
+  {% include "_live.html" %}
+{% else %}
+  {% if run.error %}<p class="errors">{{ run.error }}</p>{% endif %}
+  <section class="card">{% include "_stages.html" %}</section>
+  {% for s in sections|reverse if s.text %}
+    <details class="card section" {% if loop.first %}open{% endif %}>
+      <summary>{{ s.title }}</summary>
+      <div class="report">{{ s.text|markdown|safe }}</div>
+    </details>
+  {% else %}
+    <p class="muted">This run produced no report.</p>
+  {% endfor %}
+  <details class="card section">
+    <summary>Messages &amp; tools ({{ messages|length }})</summary>
+    {% include "_messages.html" %}
+  </details>
+{% endif %}
+{% endblock %}

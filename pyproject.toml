@@ -35,25 +35,35 @@ dev = [
     "ruff>=0.16",
     "pytest>=8.0",
     "pytest-subtests>=0.13",
+    "httpx>=0.28",  # fork addition: FastAPI TestClient for the dashboard tests
 ]
 # Amazon Bedrock support (AWS SigV4 auth + boto3). Optional so the core install
 # stays lean: pip install "tradingagents[bedrock]".
 bedrock = [
     "langchain-aws>=1.7.9",
 ]
+# Trading assistant (fork addition): the local web dashboard in assistant/web.
+web = [
+    "fastapi>=0.165",
+    "uvicorn>=0.54",
+    "jinja2>=3.1.6",
+    "python-multipart>=0.0.20",
+]
 
 [project.scripts]
 tradingagents = "cli.main:app"
+tradingagents-web = "assistant.web.app:main"  # fork addition
 
 [tool.setuptools.dynamic]
 version = {attr = "tradingagents.__version__"}
 
 [tool.setuptools.packages.find]
-include = ["tradingagents*", "cli*"]
+include = ["tradingagents*", "cli*", "assistant*"]  # assistant*: fork addition
 
 [tool.setuptools.package-data]
 cli = ["static/*"]
 tradingagents = ["assets/*.svg"]
+"assistant.web" = ["templates/*.html", "static/*"]  # fork addition
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

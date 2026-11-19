@@ -1,0 +1,140 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --text: #1c2330;
+  --muted: #667085;
+  --border: #e2e5ea;
+  --accent: #2459d6;
+  --accent-text: #ffffff;
+  --good: #137a3f;
+  --good-bg: #e3f5ea;
+  --bad: #b42318;
+  --bad-bg: #fde8e7;
+  --mid: #8a5a00;
+  --mid-bg: #fdf1d8;
+  --run: #2459d6;
+  --run-bg: #e5edfc;
+  --code-bg: #f0f2f5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1218;
+    --card: #171b23;
+    --text: #e4e7ec;
+    --muted: #98a2b3;
+    --border: #2a303b;
+    --accent: #5b8cff;
+    --accent-text: #0b0e14;
+    --good: #5fd08f;
+    --good-bg: #13301f;
+    --bad: #ff8a80;
+    --bad-bg: #3a1714;
+    --mid: #f3c25b;
+    --mid-bg: #33280f;
+    --run: #8fb0ff;
+    --run-bg: #182644;
+    --code-bg: #1f2530;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { background: var(--code-bg); padding: 0 4px; border-radius: 4px; }
+
+.topbar {
+  display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap;
+  padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--card);
+}
+.brand { font-weight: 700; color: var(--text); }
+main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; }
+
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px 20px; margin-bottom: 16px; min-width: 0;
+}
+h1 { font-size: 1.4rem; margin: 0 0 12px; }
+h2 { font-size: 1.05rem; margin: 0 0 12px; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.warn { color: var(--mid); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 16px; margin-bottom: 12px; }
+.span2 { grid-column: 1 / -1; margin: 0; }
+label { display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; font-weight: 600; }
+label.check { flex-direction: row; align-items: center; gap: 6px; font-weight: 400; display: inline-flex; margin-right: 16px; }
+input, select {
+  font: inherit; padding: 7px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+}
+fieldset { border: 1px solid var(--border); border-radius: 8px; margin: 0 0 12px; padding: 8px 12px; }
+legend { font-size: 0.9rem; font-weight: 600; padding: 0 4px; }
+button, .button {
+  font: inherit; font-weight: 600; cursor: pointer; display: inline-block;
+  padding: 8px 16px; border-radius: 6px; border: 1px solid var(--accent);
+  background: var(--accent); color: var(--accent-text); margin-right: 8px;
+}
+button.secondary, .button.secondary { background: transparent; color: var(--accent); }
+button:disabled { opacity: 0.6; cursor: progress; }
+.errors { color: var(--bad); background: var(--bad-bg); border-radius: 6px; padding: 8px 12px 8px 28px; }
+p.errors { padding-left: 12px; }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+td.num { font-variant-numeric: tabular-nums; }
+
+.badge {
+  display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.8rem;
+  font-weight: 600; background: var(--code-bg); color: var(--muted);
+}
+.badge.big { font-size: 1rem; padding: 4px 14px; }
+.status-running, .status-queued { background: var(--run-bg); color: var(--run); }
+.status-done { background: var(--good-bg); color: var(--good); }
+.status-failed { background: var(--bad-bg); color: var(--bad); }
+.rating-buy, .rating-overweight { background: var(--good-bg); color: var(--good); }
+.rating-sell, .rating-underweight { background: var(--bad-bg); color: var(--bad); }
+.rating-hold { background: var(--mid-bg); color: var(--mid); }
+
+.run-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.run-head h1 { margin-bottom: 4px; }
+.head-right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.head-right button, .head-right .button { margin-right: 0; }
+
+.stages { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 0; margin: 0 0 10px; }
+.stage { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.stage .dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--border); }
+.stage-done { color: var(--text); }
+.stage-done .dot { background: var(--good); border-color: var(--good); }
+.stage-running { color: var(--run); font-weight: 600; }
+.stage-running .dot { border-color: var(--run); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { background: var(--run); } }
+@media (prefers-reduced-motion: reduce) { .stage-running .dot { animation: none; background: var(--run); } }
+.stats { margin: 0; color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+
+.split { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; }
+@media (max-width: 860px) { .split { grid-template-columns: 1fr; } }
+.report { overflow-wrap: anywhere; max-height: 70vh; overflow-y: auto; }
+.report h1, .report h2, .report h3 { font-size: 1rem; margin: 16px 0 6px; }
+.report table { font-size: 0.9rem; }
+.report td, .report th { white-space: normal; }
+.report pre { background: var(--code-bg); padding: 8px; border-radius: 6px; overflow-x: auto; }
+
+.messages { list-style: none; margin: 0; padding: 0; max-height: 70vh; overflow-y: auto; font-size: 0.85rem; }
+.messages li { display: grid; grid-template-columns: auto auto 1fr; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.messages .time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.messages .kind { font-weight: 600; }
+.messages .text { overflow-wrap: anywhere; }
+.kind-tool { color: var(--mid); }
+.kind-agent { color: var(--good); }
+.kind-system { color: var(--run); }
+
+details.section summary { cursor: pointer; font-weight: 600; }
+details.section[open] summary { margin-bottom: 8px; }

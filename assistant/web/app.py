@@ -165,6 +165,19 @@ def create_app(data_dir: Path = DEFAULT_DATA_DIR, manager: RunManager | None = N
                   provider: str = Form(...), quick_model: str = Form(...), deep_model: str = Form(...),
                   depth: int = Form(1), analysts: Annotated[list[str] | None, Form()] = None):
         require_htmx(request)
+        return queue_run(request, ticker, trade_date, provider, quick_model, deep_model, depth, analysts or [])
+
+    @app.post("/runs/{run_id}/rerun")
+    def rerun(request: Request, run_id: int):
+        require_htmx(request)
+        record = store.get(run_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="No such run")
+        return queue_run(request, record["ticker"], record["trade_date"], record["provider"],
+                         record["quick_model"], record["deep_model"], record["depth"], record["analysts"])
+
+    def queue_run(request: Request, ticker: str, trade_date: str, provider: str, quick_model: str,
+                  deep_model: str, depth: int, analysts: list[str]) -> Response:
         errors = []
         try:
             ticker = parse_ticker(ticker)
@@ -177,7 +190,7 @@ def create_app(data_dir: Path = DEFAULT_DATA_DIR, manager: RunManager | None = N
         providers = {p["key"]: p for p in available_providers()}
         if provider not in providers:
             errors.append(f"No API key set for provider {provider!r}")
-        picked = [a for a in ANALYST_ORDER if a in (analysts or [])]
+        picked = [a for a in ANALYST_ORDER if a in analysts]
         if not picked:
             errors.append("Pick at least one analyst")
         if not quick_model.strip() or not deep_model.strip():

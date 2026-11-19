@@ -192,3 +192,28 @@ def test_base_href_and_markdown_safety():
     assert base_href("/runs/5/live") == "../../"
     html = render_markdown("<script>alert(1)</script> ![x](http://evil/x.png) [a](javascript:alert(1))")
     assert "<script" not in html and "<img" not in html and 'href="javascript' not in html
+
+
+def test_dashboard_runs_retry_model_calls(env, monkeypatch):
+    from assistant.web.runner import DASHBOARD_LLM_RETRIES, RunRequest, build_config
+    from tradingagents.default_config import DEFAULT_CONFIG
+
+    request = RunRequest("NVDA", "2026-11-18", "stock", ["market"], "openai", None, "q", "d", 1)
+    monkeypatch.setitem(DEFAULT_CONFIG, "llm_max_retries", None)
+    assert build_config(request)["llm_max_retries"] == DASHBOARD_LLM_RETRIES
+    monkeypatch.setitem(DEFAULT_CONFIG, "llm_max_retries", 1)
+    assert build_config(request)["llm_max_retries"] == 1  # an explicit setting wins
+
+
+def test_rerun_copies_a_failed_run(env):
+    client, manager, store, _ = env
+    client.post("/runs", data=FORM, headers=HTMX)
+    first = manager._queue.get_nowait()
+    store.update(first.id, status="failed", error="OpenAIAPIError: 503")
+    first.status = "failed"
+    assert "Run again" in client.get(f"/runs/{first.id}").text
+    assert client.post(f"/runs/{first.id}/rerun").status_code == 403
+    response = client.post(f"/runs/{first.id}/rerun", headers=HTMX)
+    assert response.headers["HX-Redirect"] == "runs/2"
+    again = manager._queue.get_nowait().request
+    assert (again.ticker, again.analysts, again.deep_model) == ("NVDA", ["market", "news"], "gpt-6-sol")

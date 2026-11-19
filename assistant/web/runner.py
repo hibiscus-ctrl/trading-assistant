@@ -23,6 +23,8 @@ from tradingagents.graph.trading_graph import TradingAgentsGraph
 
 logger = logging.getLogger(__name__)
 
+DASHBOARD_LLM_RETRIES = 6
+
 
 class Cancelled(Exception):
     pass
@@ -66,6 +68,10 @@ def build_config(request: RunRequest) -> dict:
     config["max_risk_discuss_rounds"] = request.depth
     # The dashboard never resumes a half-finished run; each request starts fresh.
     config["checkpoint_enabled"] = False
+    # A run makes dozens of calls over minutes; the SDK default (2 quick retries) lets one
+    # provider overload (503/529) throw away the whole run. TRADINGAGENTS_LLM_MAX_RETRIES wins.
+    if config.get("llm_max_retries") is None:
+        config["llm_max_retries"] = DASHBOARD_LLM_RETRIES
     return config
 
 

@@ -10,10 +10,12 @@
     <span class="badge status-{{ status }}">{{ status }}</span>
     {% if run.rating %}<span class="badge rating big rating-{{ run.rating|lower }}">{{ run.rating }}</span>{% endif %}
     {% if live %}<button class="secondary" hx-post="runs/{{ run.id }}/cancel" hx-swap="none" hx-confirm="Stop this run? Model calls already made are still billed.">Stop</button>{% endif %}
+    {% if not live and status in ("failed", "cancelled") %}<button hx-post="runs/{{ run.id }}/rerun" hx-target="#rerun-errors" hx-disabled-elt="this">Run again</button>{% endif %}
     {% if has_html %}<a class="button secondary" href="runs/{{ run.id }}/report" target="_blank" rel="noopener">Full HTML report</a>{% endif %}
   </div>
 </section>
 
+<div id="rerun-errors"></div>
 {% if live %}
   {% include "_live.html" %}
 {% else %}

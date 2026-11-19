@@ -25,6 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown_it import MarkdownIt
 
+from assistant.web.decision import one_line, parse_decision
 from assistant.web.progress import ANALYST_LABELS, ANALYST_ORDER, current_section, sections, stages
 from assistant.web.runner import RunManager, RunRequest
 from assistant.web.store import ACTIVE, RunStore
@@ -84,6 +85,16 @@ def host_name(host_header: str) -> str:
     if host.startswith("["):
         return host.split("]", 1)[0] + "]"
     return host.rsplit(":", 1)[0] if ":" in host else host
+
+
+def decision_from_sections(saved: list[dict]) -> dict | None:
+    """Rebuild the decision for runs saved before snapshots carried it."""
+    texts = {s["key"]: s["text"] for s in saved}
+    final = (texts.get("final_trade_decision") or "").split("### Portfolio manager decision\n", 1)
+    if len(final) < 2:
+        return None
+    return parse_decision({"final_trade_decision": final[1],
+                           "trader_investment_plan": texts.get("trader_investment_plan") or ""})
 
 
 def model_choices(provider: str) -> dict[str, list[tuple[str, str]]]:
@@ -227,11 +238,16 @@ def create_app(data_dir: Path = DEFAULT_DATA_DIR, manager: RunManager | None = N
         snapshot = store.load_snapshot(run_id) or {}
         done_sections = snapshot.get("sections") or sections({}, record["analysts"])
         filled = {s["key"] for s in done_sections if s["text"]}
+        decision = snapshot.get("decision") if "decision" in snapshot else decision_from_sections(done_sections)
+        if decision and not record.get("summary") and (line := one_line(decision)):
+            store.update(run_id, summary=line)  # runs saved before the decision card existed
+            record["summary"] = line
         return {
             "run": record, "live": False, "status": record["status"],
             "stages": [{"name": s["title"], "status": "done" if s["key"] in filled else "pending"}
                        for s in done_sections],
             "sections": done_sections,
+            "decision": decision,
             "messages": list(reversed(snapshot.get("messages") or [])),
             "stats": {k: record[k] for k in ("llm_calls", "tool_calls", "tokens_in", "tokens_out")},
             "elapsed": int(snapshot.get("elapsed") or 0),

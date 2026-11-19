@@ -16,7 +16,7 @@ from pathlib import Path
 _COLUMNS = (
     "id", "ticker", "trade_date", "status", "rating", "created_at", "started_at",
     "finished_at", "provider", "quick_model", "deep_model", "analysts", "depth",
-    "llm_calls", "tool_calls", "tokens_in", "tokens_out", "report_path", "error",
+    "llm_calls", "tool_calls", "tokens_in", "tokens_out", "report_path", "error", "summary",
 )
 
 _SCHEMA = """
@@ -39,7 +39,8 @@ CREATE TABLE IF NOT EXISTS runs (
     tokens_in    INTEGER NOT NULL DEFAULT 0,
     tokens_out   INTEGER NOT NULL DEFAULT 0,
     report_path  TEXT,
-    error        TEXT
+    error        TEXT,
+    summary      TEXT
 );
 CREATE INDEX IF NOT EXISTS runs_ticker ON runs (ticker, trade_date);
 """
@@ -61,6 +62,9 @@ class RunStore:
         self._db.row_factory = sqlite3.Row
         with self._lock:
             self._db.executescript(_SCHEMA)
+            columns = {row[1] for row in self._db.execute("PRAGMA table_info(runs)")}
+            if "summary" not in columns:  # databases created before the decision card
+                self._db.execute("ALTER TABLE runs ADD COLUMN summary TEXT")
             # Nothing survives a restart mid-run: say so rather than show it as live.
             self._db.execute(
                 "UPDATE runs SET status = 'failed', error = 'Interrupted: the dashboard restarted', "

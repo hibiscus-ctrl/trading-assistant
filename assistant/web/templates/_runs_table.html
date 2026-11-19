@@ -4,7 +4,7 @@
   {% else %}
   <div class="table-wrap">
   <table>
-    <thead><tr><th>#</th><th>Ticker</th><th>Date</th><th>Status</th><th>Rating</th><th>Models</th><th>Tokens in / out</th><th>Started</th></tr></thead>
+    <thead><tr><th>#</th><th>Ticker</th><th>Date</th><th>Status</th><th>Rating</th><th>Why</th><th>Models</th><th>Tokens in / out</th><th>Started</th></tr></thead>
     <tbody>
     {% for r in runs %}
       <tr>
@@ -13,6 +13,7 @@
         <td>{{ r.trade_date }}</td>
         <td><span class="badge status-{{ r.status }}">{{ r.status }}</span></td>
         <td>{% if r.rating %}<span class="badge rating rating-{{ r.rating|lower }}">{{ r.rating }}</span>{% endif %}</td>
+        <td class="why">{% if r.summary %}<a href="runs/{{ r.id }}">{{ r.summary }}</a>{% elif r.status == "failed" %}<span class="muted small">{{ (r.error or "")|truncate(90) }}</span>{% endif %}</td>
         <td class="small">{{ r.quick_model }} / {{ r.deep_model }}</td>
         <td class="num">{{ "{:,}".format(r.tokens_in) }} / {{ "{:,}".format(r.tokens_out) }}</td>
         <td class="small muted">{{ (r.started_at or r.created_at)[:16]|replace("T", " ") }} UTC</td>

@@ -13,6 +13,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
+from assistant.web.decision import one_line, parse_decision
 from assistant.web.progress import Progress, sections
 from assistant.web.store import RunStore, now_iso
 from cli.display import classify_message_type
@@ -165,7 +166,11 @@ class RunManager:
         live.status = status
         live.error = fields.get("error")
         stats = live.stats.get_stats()
+        decision = parse_decision(state)
+        if decision:
+            fields.setdefault("summary", one_line(decision))
         self.store.save_snapshot(live.id, {
+            "decision": decision,
             "sections": sections(state, live.request.analysts),
             "messages": live.progress.messages,
             "elapsed": live.elapsed(),

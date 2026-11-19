@@ -217,3 +217,60 @@ def test_rerun_copies_a_failed_run(env):
     assert response.headers["HX-Redirect"] == "runs/2"
     again = manager._queue.get_nowait().request
     assert (again.ticker, again.analysts, again.deep_model) == ("NVDA", ["market", "news"], "gpt-6-sol")
+
+
+def _structured_state(price_target=210.0, entry=150.0, stop=135.0):
+    from tradingagents.agents.schemas import (
+        PortfolioDecision,
+        TraderProposal,
+        render_pm_decision,
+        render_trader_proposal,
+    )
+    pm = PortfolioDecision(rating="Overweight", executive_summary="Add in two steps. Keep a stop under support.",
+                           investment_thesis="Revenue up 18% quarter on quarter.\n\nValuation is stretched.",
+                           price_target=price_target, time_horizon="3-6 months")
+    trader = TraderProposal(action="Buy", reasoning="Trend intact.", entry_price=entry, stop_loss=stop,
+                            position_sizing="2% of portfolio")
+    return {"final_trade_decision": render_pm_decision(pm), "trader_investment_plan": render_trader_proposal(trader),
+            "final_rating": "Overweight"}
+
+
+def test_decision_reads_the_engines_own_rendering():
+    from assistant.web.decision import one_line, parse_decision
+
+    d = parse_decision(_structured_state())
+    assert d["rating"] == "Overweight" and d["trader_action"] == "Buy"
+    assert d["summary"] == "Add in two steps. Keep a stop under support."
+    assert d["thesis"].endswith("Valuation is stretched.")  # multi-paragraph field kept whole
+    assert (d["entry"], d["stop"], d["price_target"]) == (150.0, 135.0, 210.0)
+    assert (d["risk_pct"], d["upside_pct"]) == (-10.0, 40.0)
+    assert (d["horizon"], d["sizing"]) == ("3-6 months", "2% of portfolio")
+    assert one_line(d) == "Add in two steps."
+
+    missing = parse_decision(_structured_state(price_target=None, entry=None, stop=None))
+    assert missing["price_target"] is None and missing["upside_pct"] is None and missing["risk_pct"] is None
+
+    loose = parse_decision({"final_trade_decision": "I think we should buy.", "final_rating": "Buy"})
+    assert loose["rating"] == "Buy" and loose["summary"] is None
+    assert parse_decision({}) is None
+
+
+def test_card_tops_the_finished_run(env):
+    client, manager, store, graphs = env
+    client.post("/runs", data=FORM, headers=HTMX)
+    live = manager._queue.get_nowait()
+    state = _structured_state()
+
+    class StructuredGraph(FakeGraph):
+        def stream_run(self, graph_input, **args):
+            yield from super().stream_run(graph_input, **args)
+            yield [], state
+
+    tmp = graphs and graphs[0].report_dir or Path("/tmp")
+    manager.graph_factory = lambda a, config=None, callbacks=None: StructuredGraph(a, config, callbacks, report_dir=tmp)
+    manager.execute(live)
+    page = client.get(f"/runs/{live.id}").text
+    assert page.index("Add in two steps.") < page.index("Full reasoning")
+    assert "-10.0%" in page and "+40.0%" in page and "2% of portfolio" in page
+    assert store.get(live.id)["summary"] == "Add in two steps."
+    assert "Add in two steps." in client.get("/").text

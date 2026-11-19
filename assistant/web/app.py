@@ -2,9 +2,13 @@
 
 Served on 127.0.0.1 only; open it through VS Code's Ports tab. Pages use a
 relative <base href>, so they also work behind code-server's /proxy/<port>/ path.
-State-changing requests must come from htmx (``HX-Request`` header): a browser
-cannot add that header cross-site without a CORS preflight we never allow, so
-another website cannot start paid runs through your browser.
+Two guards keep other websites from starting paid runs through your browser:
+
+- Every request must name a loopback Host (or one listed in TA_WEB_ALLOWED_HOSTS).
+  This defeats DNS rebinding, where an attacker's domain re-resolves to 127.0.0.1
+  and its page becomes same-origin with the dashboard.
+- State-changing requests must come from htmx (``HX-Request`` header): a browser
+  cannot add that header cross-site without a CORS preflight we never allow.
 """
 
 from __future__ import annotations
@@ -66,6 +70,22 @@ def available_providers() -> list[dict]:
     return out
 
 
+LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "[::1]"}
+
+
+def allowed_hosts() -> set[str]:
+    extra = os.environ.get("TA_WEB_ALLOWED_HOSTS", "")
+    return LOOPBACK_HOSTS | {h.strip().lower() for h in extra.split(",") if h.strip()}
+
+
+def host_name(host_header: str) -> str:
+    """The Host header without its port: 'localhost:8765' -> 'localhost', '[::1]:8765' -> '[::1]'."""
+    host = host_header.strip().lower()
+    if host.startswith("["):
+        return host.split("]", 1)[0] + "]"
+    return host.rsplit(":", 1)[0] if ":" in host else host
+
+
 def model_choices(provider: str) -> dict[str, list[tuple[str, str]]]:
     options = MODEL_OPTIONS.get(provider, {})
     return {mode: [(label, value) for label, value in options.get(mode, []) if value != "custom"]
@@ -80,6 +100,18 @@ def create_app(data_dir: Path = DEFAULT_DATA_DIR, manager: RunManager | None = N
     app = FastAPI(title="Trading assistant", docs_url=None, redoc_url=None, openapi_url=None)
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     app.state.manager = manager
+    hosts = allowed_hosts()
+
+    @app.middleware("http")
+    async def check_host(request: Request, call_next):
+        name = host_name(request.headers.get("host", ""))
+        if name not in hosts:
+            return Response(
+                f"Host {name!r} is not allowed. If you reached the dashboard through a proxy you "
+                f"trust, add it with TA_WEB_ALLOWED_HOSTS={name} and restart.\n",
+                status_code=400, media_type="text/plain",
+            )
+        return await call_next(request)
 
     def page(request: Request, name: str, **context) -> HTMLResponse:
         return templates.TemplateResponse(request, name, {"base": base_href(request.url.path), **context})

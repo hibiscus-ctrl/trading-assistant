@@ -12,6 +12,8 @@ uv pip install -p .venv -e ".[web]"      # once
 
 Open it from VS Code's **Ports** tab (forward port 8765). The server listens on 127.0.0.1 only and has no login, so do not expose the port publicly.
 
+It also refuses any request whose Host is not `localhost`, `127.0.0.1` or `[::1]`, which blocks DNS-rebinding attacks from other websites. If you open it through a proxy that keeps its own hostname (some browser-based VS Code setups do), the page says which host it saw; add it with `TA_WEB_ALLOWED_HOSTS=that.host` (comma-separated) and restart.
+
 ## What it does
 
 - **Home:** start an analysis (ticker, date, debate rounds, provider, quick and deep model, analysts) and see every run with its status, rating and token use. Providers appear when their API key is set in `.env`.

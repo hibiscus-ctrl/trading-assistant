@@ -67,6 +67,7 @@ class FakeGraph:
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("TA_WEB_ALLOWED_HOSTS", "testserver")  # TestClient's Host header
     monkeypatch.setattr("assistant.web.app.load_last_run", lambda: {})
     store = RunStore(tmp_path / "web")
     graphs = []
@@ -154,6 +155,18 @@ def test_state_changes_need_htmx(env):
     assert client.post("/runs", data=FORM).status_code == 403
     assert client.post("/runs/1/cancel").status_code == 403
     assert store.recent() == []
+
+
+def test_foreign_host_is_refused(env):
+    """DNS rebinding: a page on evil.example re-resolved to 127.0.0.1 is same-origin, so it
+    can send HX-Request; only the Host check stops it."""
+    client, manager, store, _ = env
+    response = client.post("/runs", data=FORM, headers={**HTMX, "Host": "evil.example:8765"})
+    assert response.status_code == 400
+    assert client.get("/", headers={"Host": "evil.example"}).status_code == 400
+    assert store.recent() == []
+    for host in ("localhost:8765", "127.0.0.1:8765", "[::1]:8765"):
+        assert client.get("/", headers={"Host": host}).status_code == 200
 
 
 def test_bad_input_is_reported_not_queued(env):
